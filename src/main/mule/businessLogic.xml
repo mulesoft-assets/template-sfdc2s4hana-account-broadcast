@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:s4hana="http://www.mulesoft.org/schema/mule/s4hana"
+	xmlns:batch="http://www.mulesoft.org/schema/mule/batch" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/batch/current/mule-batch.xsd
+http://www.mulesoft.org/schema/mule/s4hana http://www.mulesoft.org/schema/mule/s4hana/current/mule-s4hana.xsd">
+	<flow name="businessLogicFlow" doc:id="e28e4eaa-10f3-42f1-a4db-6755563e1d0e">
+		<batch:job jobName="migrateAccountsBatchJob" doc:id="28ab187d-863b-479e-844b-9493d60a4914"
+			blockSize="${page.size}">
+			<batch:process-records>
+				<batch:step name="CheckAccountInS4Hana" doc:id="57870701-59a5-4506-8d4f-0a5c2e8be981">
+					<ee:transform doc:name="Prepare filteredParam request for query"
+						doc:id="01e63198-031b-4fc1-b4ac-bba001234d84">
+						<ee:message>
+						</ee:message>
+						<ee:variables>
+							<ee:set-variable variableName="filteredParam"><![CDATA[%dw 2.0
+output application/java
+---
+{
+	name: "OrganizationBPName1 eq '" ++ payload.Name ++ "'"
+}]]></ee:set-variable>
+						</ee:variables>
+					</ee:transform>
+					<s4hana:query service="API_BUSINESS_PARTNER"
+						entityType="A_BusinessPartner" doc:name="Query Business Partner based on name"
+						doc:id="43039704-fcb3-4484-9a7a-65b0a345387b" config-ref="SAP_S_4HANA_Config"
+						filter="#[vars.filteredParam.name]" target="sapId" select="BusinessPartner" />
+					<ee:transform doc:name="Extend payload about Business Partner Id"
+						doc:id="a2b28c77-0c80-4dd2-a350-dea0224fb72f">
+						<ee:message>
+							<ee:set-payload><![CDATA[%dw 2.0
+output application/java
+---
+payload ++ {
+	sapId: vars.sapId[0].BusinessPartner
+}]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+					<logger level="INFO" doc:name="Log extended payload"
+						doc:id="7e0d0be8-c844-4b4c-86be-c1c41ed78db7" message="#[output apllication/json --- payload]" />
+				</batch:step>
+				<batch:step name="createAccountsBatch" doc:id="31314cdb-69a8-4a50-8880-1bc04e6838b8"
+					acceptExpression='#[payload.sapId == null]'>
+					<ee:transform doc:name="Prepare Account request"
+						doc:id="f6393bfe-5888-4d3e-a5ae-c07c6667762b">
+						<ee:message>
+							<ee:set-payload><![CDATA[%dw 2.0
+output application/java
+---
+{
+	OrganizationBPName1: payload.Name,
+	OrganizationLiquidationDate: now(),
+	BusinessPartnerName: payload.Name,
+	BusinessPartnerCategory: "2",
+	Industry: payload.Industry,
+	to_BusinessPartnerAddress : [{
+		BusinessPartner: payload.sapId,
+		StreetName: payload.BillingStreet,
+		District: payload.BillingState,
+		CityName: payload.BillingCity,
+		Country: payload.BillingCountry,
+		PostalCode: payload.BillingPostalCode,
+		to_PhoneNumber: {
+			PhoneNumber: payload.Phone
+		}
+	}]
+}]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+					<s4hana:create-entity service="API_BUSINESS_PARTNER"
+						entityType="A_BusinessPartner" doc:name="Create Account in S4Hana"
+						doc:id="bfb9347f-ef8a-4cf1-9c3c-5f864c268345" config-ref="SAP_S_4HANA_Config" />
+					<ee:transform doc:name="Save S4Hana Response"
+						doc:id="e99a35a6-f93d-44c1-8b7a-9c8060913299">
+						<ee:message>
+							<ee:set-payload><![CDATA[%dw 2.0
+output application/java
+---
+payload]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+					<logger level="INFO" doc:name="Log Response"
+						doc:id="58ba32f4-7462-46c0-abb1-047d19feb76a" message="#[output application/json --- payload]" />
+				</batch:step>
+				<batch:step name="updateAccountsBatch" doc:id="2c53b4dd-958f-47d6-b37b-07248f0773e2"
+					acceptExpression="#[payload.sapId != null]">
+					<ee:transform doc:name="Prepare Account request"
+						doc:id="0efa926a-6cb3-4fe0-b50e-a834dafebba7">
+						<ee:message>
+							<ee:set-payload><![CDATA[%dw 2.0
+output application/java
+---
+{
+	BusinessPartner: payload.sapId,
+	OrganizationBPName1: payload.Name,
+	OrganizationLiquidationDate: now(),
+	BusinessPartnerName: payload.Name,
+	BusinessPartnerCategory: "2",
+	Industry: payload.Industry,
+	to_BusinessPartnerAddress : [{
+		BusinessPartner: payload.sapId,
+		StreetName: payload.BillingStreet,
+		District: payload.BillingState,
+		CityName: payload.BillingCity,
+		Country: payload.BillingCountry,
+		PostalCode: payload.BillingPostalCode,
+		to_PhoneNumber: {
+			PhoneNumber: payload.Phone
+		}
+	}]
+}]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+					<s4hana:update-entity service="API_BUSINESS_PARTNER"
+						entityType="A_BusinessPartner" doc:name="Update Account in S4Hana"
+						doc:id="15b62053-101e-4510-86f6-eb80ae22a738" config-ref="SAP_S_4HANA_Config" />
+					<ee:transform doc:name="Save S4Hana Response"
+						doc:id="c9675928-fdc9-4cba-96b9-b157c40e2e9e">
+						<ee:message>
+							<ee:set-payload><![CDATA[%dw 2.0
+output application/java
+---
+payload]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+					<logger level="INFO" doc:name="Log Response"
+						doc:id="bfcfbb2b-a261-4e4a-8c92-7da4444dbdf6" message="#[output application/json --- payload]" />
+				</batch:step>
+			</batch:process-records>
+			<batch:on-complete>
+				<ee:transform doc:name="Prepare migration result"
+					doc:id="0dd79901-0af8-40a4-a660-01dbd300e552">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+    output text/plain
+    ---
+    "Migration Report: \n"
+
+    ++ "\n Time [milliseconds]: "       ++ payload.elapsedTimeInMillis!
+    ++ "\n Total Records: "             ++ payload.totalRecords!
+    ++ "\n Successful Records: "        ++ payload.successfulRecords!
+    ++ "\n Failed Records: "            ++ payload.failedRecords!
+    ++ "\n Loaded Records: "            ++ payload.loadedRecords!
+    ++ "\n Processed Records: "         ++ payload.processedRecords!]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<logger level="INFO" doc:name="Migration process has finished!"
+					doc:id="d23b9cc6-beea-459b-b640-ae986394c980" message="Migration process has finished: #[payload]" />
+			</batch:on-complete>
+
+		</batch:job>
+	</flow>
+</mule>
