@@ -1,15 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns:tls="http://www.mulesoft.org/schema/mule/tls"
-	xmlns:s4hana="http://www.mulesoft.org/schema/mule/s4hana"
+<mule xmlns:s4hana="http://www.mulesoft.org/schema/mule/s4hana"
 	xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce"
 	xmlns="http://www.mulesoft.org/schema/mule/core"
 	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:os="http://www.mulesoft.org/schema/mule/os"
 	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd http://www.mulesoft.org/schema/mule/s4hana http://www.mulesoft.org/schema/mule/s4hana/current/mule-s4hana.xsd
-http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd
-http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd">
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd">
 	<global-property doc:name="Global Property"
 		doc:id="9f38620c-b368-4542-abcc-bc524adf97f1" name="mule.env" value="dev" />
 	<configuration-properties doc:name="Configuration properties"

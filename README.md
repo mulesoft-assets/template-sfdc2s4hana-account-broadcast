@@ -182,7 +182,7 @@ This file provides the configuration for connectors and configuration properties
 ## businessLogic.xml
 <!-- Default Business Logic XML (start) -->
 Functional aspect of the template is implemented on this XML, directed by one flow responsible of executing the logic.
-For the purpose of this particular template the *mainFlow* just executes the Batch Job which handles all the logic of it.
+For the purpose of this particular template the *businessLogicFlow* just executes the Batch Job which handles all the logic of it.
 This flow has Error Handling that basically consists on invoking the *On Error Propagate Component* defined in *errorHandling.xml* file.<!-- Default Business Logic XML (end) -->
 
 <!-- Business Logic XML (start) -->
@@ -191,13 +191,9 @@ This flow has Error Handling that basically consists on invoking the *On Error P
 
 ## endpoints.xml
 <!-- Default Endpoints XML (start) -->
-This file provides the inbound and outbound sides of your integration app.
-This template has only an [HTTP Inbound Endpoint](http://www.mulesoft.org/documentation/display/current/HTTP+Endpoint+Reference) as the way to trigger the use case.
-**HTTP Inbound Endpoint** - Start Synchronization
-+ `${http.port}` is set as a property to be defined either on a property file or in CloudHub environment variables.
-+ The path configured by default is `migrateaccounts` and you are free to change for the one you prefer.
-+ The host name for all endpoints in your CloudHub configuration should be defined as `localhost`. CloudHub will then route requests from your application domain URL to the endpoint.
-+ The endpoint is configured as a *request-response* since as a result of calling it the response will be the total of Accounts migrated and filtered by the criteria specified.<!-- Default Endpoints XML (end) -->
+This file is conformed by two Flows.
+The first one we'll call it **schedulerFlow** flow. This one contains the Scheduler endpoint that will periodically trigger **query** flow and then executing the batch job process.
+The second one we'll call it **queryFlow** flow. This one contains watermarking logic that will be querying Salesforce for updated/created Accounts that meet the defined criteria in the query since the last polling. The last invocation timestamp is stored by using Objectstore Component and updated after each Salesforce query.<!-- Default Endpoints XML (end) -->
 
 <!-- Endpoints XML (start) -->
 
