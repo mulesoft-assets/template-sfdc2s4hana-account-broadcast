@@ -58,7 +58,7 @@ There are no particular considerations for this template regarding API calls
 				<section id="default_endpoints_xml">
 		
 This file is conformed by two Flows.
-The first one we'll call it **schedulerFlow** flow. This one contains the Scheduler endpoint that will periodically trigger **query** flow and then executing the batch job process.
+The first one we'll call it **schedulerFlow** flow. This one contains the Scheduler endpoint that will periodically trigger **queryFlow** flow and then executing the batch job process.
 The second one we'll call it **queryFlow** flow. This one contains watermarking logic that will be querying Salesforce for updated/created Accounts that meet the defined criteria in the query since the last polling. The last invocation timestamp is stored by using Objectstore Component and updated after each Salesforce query.
 
 		</section>

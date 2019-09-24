@@ -192,7 +192,7 @@ This flow has Error Handling that basically consists on invoking the *On Error P
 ## endpoints.xml
 <!-- Default Endpoints XML (start) -->
 This file is conformed by two Flows.
-The first one we'll call it **schedulerFlow** flow. This one contains the Scheduler endpoint that will periodically trigger **query** flow and then executing the batch job process.
+The first one we'll call it **schedulerFlow** flow. This one contains the Scheduler endpoint that will periodically trigger **queryFlow** flow and then executing the batch job process.
 The second one we'll call it **queryFlow** flow. This one contains watermarking logic that will be querying Salesforce for updated/created Accounts that meet the defined criteria in the query since the last polling. The last invocation timestamp is stored by using Objectstore Component and updated after each Salesforce query.<!-- Default Endpoints XML (end) -->
 
 <!-- Endpoints XML (start) -->
